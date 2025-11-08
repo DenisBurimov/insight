@@ -1,0 +1,15 @@
+<div class="w-1/5 flex justify-center">
+  <div class="w-full space-y-5 overflow-y-scroll">
+    {% for filename in payments_images %}
+    <div class="flex justify-center cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700">
+      <div>
+        <div
+          class="h-32 w-32 overflow-hidden bg-white dark:bg-white shadow-md shadow-black dark:shadow-gray-300 flex justify-center items-center">
+          <img src="{{ url_for('static', filename='payments/'+filename) }}" alt="" class="w-full">
+        </div>
+        <p class="text-blue-900 dark:text-white">{{ filename }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>

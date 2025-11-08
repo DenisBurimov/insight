@@ -23,6 +23,8 @@ class BaseConfig(BaseSettings):
     ADMIN_EMAIL: str = "admin@mail.com"
     ADMIN_PASSWORD: str = "some_password"
 
+    PAYMENTS_SOURCE_FOLDER: str = "static/payments"
+
     @staticmethod
     def configure(app):
         # Implement this method to do further configuration on your app.
