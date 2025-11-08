@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>{{ config.APP_NAME }}</title>
+  <!-- meta -->
+  <meta name="description" content="In.Sight" />
+  <meta name="author" content="In.Sight" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="{{ url_for('static', filename='js/lib/htmx.min.js') }}" type="text/javascript" defer></script>
+  <script src="{{ url_for('static', filename='js/lib/response-targets.js') }}" type="text/javascript" defer></script>
+
+  {% block meta %}{% endblock %}
+
+  <!-- styles -->
+
+  <link rel="icon" href="{{ url_for('static', filename='img/icon.png') }}">
+  <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet" />
+
+  <script>
+    // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+    if (
+      localStorage.getItem("color-theme") === "dark" ||
+      (!("color-theme" in localStorage) &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  </script>
+
+  {% block links %}
+  {% endblock %}
+</head>
+
+<body hx-ext="response-targets" class="bg-white dark:bg-darkPrimary dark:text-white">
+  <!-- Header -->
+
+  {% include 'header.html' %}
+  <!-- Flash Messages -->
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <!-- Flash message markup -->
+
+  {% include 'toast.html' %}
+
+
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  {% block body %}
+
+  <div class="mt-16 pt-5 md:mt-20 h-full">
+    <!-- Main Content -->
+    <div class="flex justify-center">
+      <div class="w-full">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+  {% endblock %}
+  <!-- scripts -->
+
+
+
+  </div>
+  <script src="{{ url_for('static', filename='js/base.js') }}" type="text/javascript" defer></script>
+
+  <div id="not-found"></div>
+  {% include 'spinner.html' %}
+
+  {% block scripts %} {% endblock %}
+
+</body>
+
+</html>

@@ -1,0 +1,28 @@
+# ignore directories
+__pycache__/
+env/
+.venv/
+.pytest_cache/
+node_modules/
+
+# ignore files
+*.env
+*.env*
+*.pyc
+/*.sqlite3
+
+# SQL files
+*.sql
+*.xlsx
+
+# Dump files
+*_dump.json
+
+.DS_Store
+app/services/data/*
+app/data/*
+*.pickle
+certs/
+
+cloud-sql-proxy
+creds.json

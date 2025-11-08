@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    command: sh ./start_web.sh
+    volumes:
+      - ./creds.json:/app/creds.json
+    env_file:
+      - ./.env
+    environment:
+      APP_ENV: production
+      GOOGLE_APPLICATION_CREDENTIALS: /app/creds.json
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kub.rule=Host(`lawbot.kub-app.com`)"
+      - "traefik.http.services.kub.loadbalancer.server.port=8080"
+      - "traefik.http.routers.kub.tls=true"
+      - "traefik.http.routers.kub.tls.certresolver=resolver"

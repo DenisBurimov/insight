@@ -1,0 +1,53 @@
+**/__pycache__
+**/.pytest_cache
+**/.classpath
+**/.dockerignore
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/docker-compose*
+**/compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+README.md
+TODO.md
+**/.venv
+/tests/
+/src/
+**/*.sqlite3
+**/package.json
+**/tox.ini
+**/yarn.lock
+nifty*.json
+bank*.json
+gcloud*.sh
+*_dump.json
+*.env*
+
+# ignore directories
+__pycache__/
+env/
+.venv/
+.pytest_cache/
+node_modules/
+
+# ignore files
+*.env
+*.env*
+*.pyc
+/*.sqlite3
+nifty*.json
+bank*.json
+law*.json
+*.xlsx
+
+# SQL files
+*.sql
+
+# Dump files
+*_dump.json
+
+.DS_Store
+app/services/data/

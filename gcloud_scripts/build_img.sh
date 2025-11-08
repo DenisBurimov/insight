@@ -1,0 +1,1 @@
+gcloud builds submit --tag ${CLOUD_RUN_REGION}-docker.pkg.dev/${SPANNER_PROJECT_ID}/${ARTIFACT_REPO}/${IMG_NAME}:${TAG_NAME}

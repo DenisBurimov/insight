@@ -1,0 +1,28 @@
+FROM python:3.13
+
+# Add user app
+RUN python -m pip install -U pip
+RUN adduser -uid 2001 app
+USER app
+WORKDIR /home/app
+
+# Set environment variables
+ENV PYTHONFAULTHANDLER 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONHASHSEED random
+ENV PIP_NO_CACHE_DIR off
+ENV PIP_DISABLE_PIP_VERSION_CHECK on
+ENV PATH="/home/app/.local/bin:${PATH}"
+
+# Install app dependencies
+COPY --chown=app:app requirements.txt /home/app/requirements.txt
+
+RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --user gunicorn ipython
+
+COPY --chown=app:app . .
+ENV PORT 8080
+ENV FLASK_APP=wsgi.py
+
+
+EXPOSE 8080

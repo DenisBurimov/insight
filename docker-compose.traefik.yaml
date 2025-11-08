@@ -1,0 +1,41 @@
+services:
+    traefik:
+        image: "traefik:v2.10"
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            # Certificates
+            - "./data/traefic/:/data"
+            - "./letsencrypt:/letsencrypt"
+        command:
+            - "--providers.docker"
+            # Certificates
+            - "--entryPoints.websecure.address=:443"
+            - "--entryPoints.web.address=:80"
+            - "--certificatesResolvers.resolver.acme.email=denysburimov@gmail.com"
+            - "--certificatesResolvers.resolver.acme.storage=/data/acme.json"
+            - "--certificatesresolvers.resolver.acme.caServer=https://acme-v02.api.letsencrypt.org/directory"
+            - "--certificatesresolvers.resolver.acme.httpchallenge=true"
+            - "--certificatesresolvers.resolver.acme.httpchallenge.entrypoint=web"
+            # Redirects http -> https
+            - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+            # Dashboard
+            - "--api.dashboard=true"
+        labels:
+            - "traefik.http.routers.dashboard.rule=Host(`lawbot-traefik.kub-app.com`)"
+            - "traefik.http.routers.dashboard.service=dashboard@internal"
+            - "traefik.http.routers.dashboard.tls=true"
+            - "traefik.http.routers.dashboard.tls.certresolver=resolver"
+            - "traefik.http.routers.dashboard.middlewares=auth"
+            - "traefik.http.middlewares.auth.basicauth.users=user:$$apr1$$hash"
+
+        networks:
+          - kub
+
+networks:
+  kub:
+    external: true
+    name: kub_default

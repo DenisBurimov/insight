@@ -1,0 +1,47 @@
+{
+  "name": "static",
+  "version": "0.1.6",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "js-watch": "webpack --config webpack.dev.js --watch",
+    "js": "webpack --config webpack.prod.js",
+    "css": "tailwindcss -i ./src/styles.css -o ./app/static/css/styles.css --minify",
+    "css-watch": "tailwindcss -i ./src/styles.css -o ./app/static/css/styles.css --watch",
+    "build": "yarn css && yarn js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ckeditor/ckeditor5-alignment": "^43.0.0",
+    "@ckeditor/ckeditor5-basic-styles": "^43.0.0",
+    "@ckeditor/ckeditor5-dev-utils": "^42.0.0",
+    "@ckeditor/ckeditor5-editor-classic": "^43.0.0",
+    "@ckeditor/ckeditor5-essentials": "^43.0.0",
+    "@ckeditor/ckeditor5-font": "^43.0.0",
+    "@ckeditor/ckeditor5-list": "^43.0.0",
+    "@ckeditor/ckeditor5-paragraph": "^43.0.0",
+    "@ckeditor/ckeditor5-theme-lark": "^43.0.0",
+    "@ckeditor/ckeditor5-undo": "^43.0.0",
+    "ckeditor5": "^43.0.0",
+    "flowbite": "^1.6.4",
+    "tailwindcss": "^3.2.7"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "css-loader": "^5.2.7",
+    "css-minimizer-webpack-plugin": "^5.0.0",
+    "file-loader": "^6.2.0",
+    "mini-css-extract-plugin": "^2.7.5",
+    "postcss": "^8.4.21",
+    "postcss-loader": "^4.3.0",
+    "postcss-preset-env": "^8.3.1",
+    "raw-loader": "^4.0.2",
+    "style-loader": "^2.0.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^5.0.4",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.13.2"
+  }
+}

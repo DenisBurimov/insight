@@ -1,0 +1,79 @@
+<nav class="fixed top-0 z-50 w-full bg-blue-400 text-white dark:bg-darkPrimary dark:text-white">
+  <div class="w-full flex justify-center border-b border-gray-200 dark:border-gray-600">
+    <div class="w-full md:w-11/12 px-1 py-5 md:px-0">
+      <div class="flex items-center justify-between">
+        <div class="w-full flex items-center justify-between">
+          <a href="/" class="flex">
+            <img src="{{url_for('static',filename='img/logo.png')}}" class="h-12 mr-1 md:mr-3" alt="QTE Logo" />
+          </a>
+
+          <button type="button"
+            class="inline-flex items-center p-2 text-sm text-gray-500 dark:text-white rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
+            <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path clip-rule="evenodd" fill-rule="evenodd"
+                d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
+              </path>
+            </svg>
+          </button>
+
+          <div class="flex items-center gap-24">
+            <div
+              class="py-2 px-4 text-2xl cursor-pointer hover:bg-gradient-to-r from-blue-400 to-blue-300 dark:hover:bg-gradient-to-r dark:from-darkPrimary dark:to-darkSecondary">
+              PAYMENTS
+            </div>
+            <div
+              class="py-2 px-4 text-2xl cursor-pointer hover:bg-gradient-to-r from-blue-400 to-blue-300 dark:hover:bg-gradient-to-r dark:from-darkPrimary dark:to-darkSecondary">
+              CONTRACTS
+            </div>
+            <div
+              class="py-2 px-4 text-2xl cursor-pointer hover:bg-gradient-to-r from-blue-400 to-blue-300 dark:hover:bg-gradient-to-r dark:from-darkPrimary dark:to-darkSecondary">
+              GENERAL
+            </div>
+            <div
+              class="menu-item flex gap-4 items-center justify-between bg-blue-400 dark:bg-darkPrimary dark:text-white">
+              <div class="relative">
+                <button id="dropdown-menu-button"
+                  class="bg-white text-blue-400 font-semibold px-4 py-2 focus:outline-none bg-gradient-to-r from-blue-100 to-white hover:bg-gradient-to-r hover:from-blue-200 hover:to-white dark:bg-gray-800 dark:hover:bg-gradient-to-r dark:from-darkSecondary dark:to-gray-500 dark:text-white cursor-pointer">
+                  ACTIONS
+                </button>
+
+                <div id="dropdown-menu"
+                  class="absolute right-0 bg-white  dark:bg-darkPrimary dark:text-white shadow-lg z-10">
+                  <div
+                    class="flex justify-between items-center hover:bg-gradient-to-r from-blue-200 to-white dark:hover:bg-gradient-to-r dark:from-darkPrimary dark:to-darkSecondary">
+                    <a href="#" class="block px-4 py-3 text-blue-400 dark:text-white">
+                      <p class="">denysburimov@gmail.com</p>
+                    </a>
+
+                    <div class="w-2/12 flex justify-center">
+                      <button id="theme-toggle" type="button"
+                        class="theme-toggle text-blue-400 mx-2 focus:outline-none focus:ring-1 rounded-sm text-sm p-1 focus:ring-secondary focus:border-secondary">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 dark:text-white border border-primary"
+                          fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            fill-rule="evenodd" clip-rule="evenodd"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <a href="#"
+                    class="block px-4 py-3 text-blue-400 hover:bg-gradient-to-r from-blue-200 to-white dark:text-white dark:hover:bg-gradient-to-r dark:from-darkPrimary dark:to-darkSecondary">Settings</a>
+                  <a href="#"
+                    class="block px-4 py-3 text-blue-400 hover:bg-gradient-to-r from-blue-200 to-white dark:text-white dark:hover:bg-gradient-to-r dark:from-darkPrimary dark:to-darkSecondary">Logout</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</nav>

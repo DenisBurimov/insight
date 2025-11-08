@@ -1,0 +1,38 @@
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:.*cgi.*:DeprecationWarning",
+    'ignore:.*werkzeug\.urls\.url.*:DeprecationWarning',
+    'ignore:.*flask\.Markup.*:DeprecationWarning',
+]
+testpaths = ["tests"]
+
+[tool.pytest_env]
+APP_ENV = "testing"
+IS_2FA_ENABLED = false
+SCHEDULER_ACCESS_TOKEN = "some_token"
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+files = ["app/**/*.py", "tests/**/*.py"]
+exclude = ["migrations", "venv"]
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.ruff]
+exclude = [
+    "__pypackages__",
+    "__pycache__",
+    ".eggs",
+    ".git",
+    ".github",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+    "node_modules",
+    "migrations",
+]
+line-length = 120
+indent-width = 4
