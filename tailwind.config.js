@@ -6,6 +6,10 @@ module.exports = {
     './src/js/**/*.js',
     './node_modules/flowbite/**/*.js',
   ],
+  safelist: [
+    'bg-blue-200',
+    'bg-gray-800',
+  ],
   theme: {
     extend: {
       colors: {

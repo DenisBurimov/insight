@@ -15,4 +15,5 @@ pydantic-settings
 pandas
 pydantic
 pydantic-settings
+pytest
 openai

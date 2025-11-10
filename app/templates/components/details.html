@@ -1,1 +1,121 @@
-<div class="w-1/5 bg-red-200">Data</div>
+{% if payment %}
+<form id="payment-form" hx-post="{{url_for('main.preview')}}" hx-target="#payment-form"
+  class="w-1/4 px-1 my-2 space-y-3 overflow-y-auto">
+  <div class="text-blue-800 dark:text-white">
+    <label for="number">Payment number:</label>
+    <input id="number" type="text" name="number"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payment_date">Payment date:</label>
+    <input id="payment_date" type="text" name="payment_date"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="reveiving_date">Reveiving date:</label>
+    <input id="reveiving_date" type="text" name="reveiving_date"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="summ">Sum:</label>
+    <input id="summ" type="text" name="summ"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="summ_words">Sum words:</label>
+    <input id="summ_words" type="text" name="summ_words"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payment_purpose">Payment purpose:</label>
+    <input id="payment_purpose" type="text" name="payment_purpose"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payer_name">Payer name:</label>
+    <input id="payer_name" type="text" name="payer_name"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payer_code">Payer code:</label>
+    <input id="payer_code" type="text" name="payer_code"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payer_bank_name">Payer bank name:</label>
+    <input id="payer_bank_name" type="text" name="payer_bank_name"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payer_bank_code">Payer bank code:</label>
+    <input id="payer_bank_code" type="text" name="payer_bank_code"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="payer_iban">Payer iban:</label>
+    <input id="payer_iban" type="text" name="payer_iban"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="recipient_name">Recipient name:</label>
+    <input id="recipient_name" type="text" name="recipient_name"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="recipient_code">Recipient code:</label>
+    <input id="recipient_code" type="text" name="recipient_code"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="recipient_bank_name">Recipient bank name:</label>
+    <input id="recipient_bank_name" type="text" name="recipient_bank_name"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="recipient_bank_code">Recipient bank code:</label>
+    <input id="recipient_bank_code" type="text" name="recipient_bank_code"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="text-blue-800 dark:text-white">
+    <label for="recipient_iban">Recipient iban:</label>
+    <input id="recipient_iban" type="text" name="recipient_iban"
+      class="w-[97%] border-0 dark:bg-gray-800 shadow shadow-black dark:shadow-gray-50">
+  </div>
+
+  <div class="py-3">
+    <button
+      class="w-[97%] px-3 py-2 bg-blue-400 text-white font-semibold dark:bg-white dark:text-darkPrimary">Save</button>
+  </div>
+</form>
+{% else %}
+<div class="w-1/4 flex justify-center items-center">
+  <div class="w-2/3 space-y-2">
+    {% if filename %}
+    <p class="text-xs text-center font-light">This document has not been recognized yet</p>
+    <p class="text-xs text-center font-light">Please click this button to start recognition</p>
+    {% else %}
+    <p class="text-xs text-center font-light">None of the documents have been selected</p>
+    <p class="text-xs text-center font-light">Please pick a document and click the button below to start recognition</p>
+    {% endif %}
+    <div class="flex">
+      <button hx-post="{{url_for('main.preview', filename=filename)}}" hx-target="#payment-form"
+        class="w-[97%] px-3 py-2 bg-blue-400 text-white font-semibold dark:bg-white dark:text-darkPrimary">Recognize</button>
+    </div>
+  </div>
+</div>
+{% endif %}

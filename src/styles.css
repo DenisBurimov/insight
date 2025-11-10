@@ -124,8 +124,8 @@
 
 /* Scrollbar for both horizontal and vertical */
 ::-webkit-scrollbar {
-  width: 8px;  /* Vertical scrollbar width */
-  height: 8px; /* Horizontal scrollbar height */
+  width: 4px;  /* Vertical scrollbar width */
+  height: 4px; /* Horizontal scrollbar height */
 }
 
 /* Track (background) */

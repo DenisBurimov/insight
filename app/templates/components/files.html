@@ -1,7 +1,9 @@
 <div class="w-1/5 flex justify-center">
-  <div class="w-full space-y-5 overflow-y-scroll">
+  <div class="w-full pt-5 space-y-5 overflow-y-scroll">
     {% for filename in payments_images %}
-    <div class="flex justify-center cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700">
+    <div class="doc-list-item flex justify-center cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700"
+      hx-trigger="click" hx-target="#preview" hx-swap="outerHTML"
+      hx-get="{{url_for('main.preview', filename=filename)}}">
       <div>
         <div
           class="h-32 w-32 overflow-hidden bg-white dark:bg-white shadow-md shadow-black dark:shadow-gray-300 flex justify-center items-center">

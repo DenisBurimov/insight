@@ -1,1 +1,12 @@
-<div class="w-3/5">Document</div>
+<div class="w-3/4 p-2 flex">
+  {% if filename %}
+  <div
+    class="shadow-md w-full p-1 flex justify-center items-center bg-white shadow-black dark:shadow-gray-100 overflow-y-auto">
+    <img src="{{url_for('static', filename='payments/'+filename)}}" alt="preview" class="w-full">
+  </div>
+  {% else %}
+  <div class="shadow-md w-full p-1 flex justify-center items-center shadow-black dark:shadow-gray-100">
+    <div>Choose a document</div>
+  </div>
+  {% endif %}
+</div>
