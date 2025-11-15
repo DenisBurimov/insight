@@ -4,10 +4,10 @@ import sqlalchemy as sa
 from app import db, models as m
 from config import config
 from app.services.gpt import ChatGPT
+from app.logger import log
 
 
 CFG = config()
-gpt = ChatGPT()
 
 
 def init(app: Flask):
@@ -17,6 +17,9 @@ def init(app: Flask):
         """Objects exposed here will be automatically available from the shell."""
         return dict(
             app=app,
+            db=db,
+            sa=sa,
+            m=m,
             # some_arg=some_arg,
         )
 
@@ -43,17 +46,32 @@ def init(app: Flask):
         ).save()
         print("Admin created: ", admin)
 
-    @app.cli.command("call-api")
-    def call_api():
-        import os
-        import requests
+    @app.cli.command()
+    def read_img():
+        from app.services.gpt import gpt_service
 
-        response = requests.get(
-            "http://127.0.0.1:5050/api/v1/nssmc/parser_scheduler",
-            headers={
-                "Access-Token": os.environ.get("SCHEDULER_ACCESS_TOKEN"),
-                "User-Agent": "Google-Cloud-Scheduler",
-            },
-        )
+        response = gpt_service.recognize("app/static/payments/payments_001.jpg")
         print(response)
-        print("API called successfully")
+
+    @app.cli.command()
+    def get_payments():
+        payments = db.session.scalars(sa.select(m.Payment)).all()
+
+        if not payments:
+            print("No payments found")
+            return
+
+        for payment in payments:
+            print(payment)
+
+    @app.cli.command()
+    def delete_payments():
+        payments = db.session.scalars(sa.select(m.Payment)).all()
+        for payment in payments:
+            db.session.delete(payment)
+
+        try:
+            db.session.commit()
+            print("Payments deleted")
+        except Exception as e:
+            print(e)

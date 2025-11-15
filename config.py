@@ -16,8 +16,6 @@ class BaseConfig(BaseSettings):
     SCHEDULER_ACCESS_TOKEN: str = "scheduler-token"
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///app.db"
     OPENAI_API_KEY: str = "open-ai-key"
-    VECTOR_STORE_ID: str = "vs_12345"
-    EXTENDED_VECTOR_STORE_ID: str = "vs_12345"
 
     ADMIN_USERNAME: str = "admin_name"
     ADMIN_EMAIL: str = "admin@mail.com"

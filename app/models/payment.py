@@ -23,9 +23,9 @@ class Payment(db.Model, ModelMixin):  # type: ignore
 
     # Document information
     number: Mapped[str | None] = mapped_column(sa.String(64))
-    payment_date: Mapped[str | None] = mapped_column(sa.String(8))
-    receiving_date: Mapped[str | None] = mapped_column(sa.String(8))
-    summ: Mapped[str | None] = mapped_column(sa.Integer)
+    payment_date: Mapped[str | None] = mapped_column(sa.String(64))
+    receiving_date: Mapped[str | None] = mapped_column(sa.String(64))
+    summ: Mapped[str | None] = mapped_column(sa.String(64))
     summ_words: Mapped[str | None] = mapped_column(sa.String(512))
     payment_purpose: Mapped[str | None] = mapped_column(sa.String(1024))
 
@@ -42,6 +42,9 @@ class Payment(db.Model, ModelMixin):  # type: ignore
     recipient_bank_name: Mapped[str | None] = mapped_column(sa.String(512))
     recipient_bank_code: Mapped[str | None] = mapped_column(sa.String(512))
     recipient_iban: Mapped[str | None] = mapped_column(sa.String(512))
+
+    # LLM string response in case it has not been parsed as a json
+    text_data: Mapped[str | None] = mapped_column(sa.Text)
 
     def __repr__(self):
         return f"<{self.id}:{self.filename}:{self.summ}>"

@@ -1,4 +1,6 @@
 import openai
+import json
+import base64
 from config import config
 from app.logger import log
 
@@ -10,7 +12,6 @@ client = openai.OpenAI()
 
 
 class ChatGPT:
-
     def ask(self, prompt, file_path=None):
         if file_path:
             with open(file_path, "r", encoding="utf-8") as file:
@@ -65,3 +66,52 @@ class ChatGPT:
         )
         # simplest way to get the model’s text:
         return resp.output_text
+
+    def recognize(self, file_path: str):
+        with open(file_path, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+        response_text = None
+        payment_data = None
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",  # or gpt-4o or "gpt-4-vision-preview"
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": (
+                                    "Could you please recognize all data from this document\n"
+                                    "This is a ukrainian bank payment instruction\n"
+                                    "Please, return a json with these fields: ['number', 'payment_date', 'receiving_date', 'summ', 'summ_words', 'payment_purpose', 'payer_name', 'payer_code', 'payer_bank_name', 'payer_bank_code', 'payer_iban', 'recipient_name', 'recipient_code', 'recipient_bank_name', 'recipient_bank_code', 'recipient_iban']\n"
+                                    "Do not make up anything. If it's a problem to recognize some value, please, set null for it.\n"
+                                    "Extract the information and return ONLY valid JSON without any markdown formatting or additional text. Do not wrap the response in code blocks.\n"
+                                ),
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{img_b64}"
+                                },
+                            },
+                        ],
+                    }
+                ],
+            )
+            response_text = response.choices[0].message.content
+        except Exception as e:
+            log(log.ERROR, "Failed to get a LLM response. %", e)
+            return None, None
+
+        try:
+            payment_data = json.loads(response_text)
+            log(log.INFO, "Payment data has been successfully recognized")
+            return payment_data, None
+        except Exception as e:
+            log(log.ERROR, "Failed to recognize data. %", e)
+            return None, response_text
+
+
+gpt_service = ChatGPT()

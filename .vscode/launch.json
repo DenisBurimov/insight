@@ -45,7 +45,7 @@
       "justMyCode": false
     },
     {
-      "name": "get-vector-stores",
+      "name": "read-img",
       "type": "python",
       "request": "launch",
       "module": "flask",
@@ -56,7 +56,7 @@
         "DEBUG": "true"
       },
       "args": [
-        "get-vector-stores"
+        "read-img"
       ],
       "jinja": true,
       "justMyCode": false
