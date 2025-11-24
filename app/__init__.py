@@ -8,7 +8,6 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from werkzeug.exceptions import HTTPException
 from flask_wtf.csrf import CSRFProtect
-from google.cloud.sql.connector import Connector
 
 from app.logger import log
 
@@ -17,22 +16,6 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 migration = Migrate()
 db = SQLAlchemy()
-connector = Connector()
-
-
-def getconn():
-    instance_connection_name = os.environ["INSTANCE_CONNECTION_NAME"]
-    user = os.environ["POSTGRES_USER"]
-    password = os.environ["POSTGRES_PASSWORD"]
-    db_name = os.environ["POSTGRES_DB"]
-
-    return connector.connect(
-        instance_connection_name,
-        driver="pg8000",
-        user=user,
-        password=password,
-        db=db_name,
-    )
 
 
 def create_app(environment="development"):
@@ -59,9 +42,6 @@ def create_app(environment="development"):
 
     if configuration.APP_ENV == "testing":
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///testing.db"
-    elif configuration.DATABASE_CONNECTION == "cloud":
-        app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"creator": getconn}
     elif configuration.DATABASE_CONNECTION == "local":
         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
             "SQLALCHEMY_DATABASE_URI"

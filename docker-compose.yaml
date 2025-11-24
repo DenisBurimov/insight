@@ -5,13 +5,10 @@ services:
       dockerfile: Dockerfile
     restart: always
     command: sh ./start_web.sh
-    volumes:
-      - ./creds.json:/app/creds.json
     env_file:
       - ./.env
     environment:
       APP_ENV: production
-      GOOGLE_APPLICATION_CREDENTIALS: /app/creds.json
     ports:
       - "8080:8080"
     expose:
