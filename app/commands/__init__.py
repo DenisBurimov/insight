@@ -75,3 +75,11 @@ def init(app: Flask):
             print("Payments deleted")
         except Exception as e:
             print(e)
+
+    @app.cli.command()
+    def ask_filters():
+        from app.services.gpt import gpt_service
+
+        question = "Скільки транзакцій де платник чи отримувач Іван Іванич Іванов?"
+        res = gpt_service.get_filters(question)
+        print(res)

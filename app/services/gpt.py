@@ -1,117 +1,188 @@
+import os
 import openai
-import json
-import base64
-from config import config
+from datetime import datetime
 from app.logger import log
+from pydantic import BaseModel
+from typing import Literal, Optional, Dict, Any
+
+client = openai.OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
 
 
-CFG = config()
+class FilterDate(BaseModel):
+    gte: Optional[str] = None
+    lte: Optional[str] = None
 
-openai.api_key = CFG.OPENAI_API_KEY
-client = openai.OpenAI()
+
+class QueryFilters(BaseModel):
+    action: Literal["count", "list", "sum"] | None
+    filters: Dict[str, Any] = {}
 
 
 class ChatGPT:
-    def ask(self, prompt, file_path=None):
-        if file_path:
-            with open(file_path, "r", encoding="utf-8") as file:
-                file_content = file.read()
-            # Combine the prompt with the file content
-            full_prompt = f"{prompt}\n\nFile content:\n{file_content}"
-        else:
-            full_prompt = prompt
-
-        response = openai.chat.completions.create(
-            model="gpt-5",
-            messages=[{"role": "user", "content": full_prompt}],
-        )
-
-        message = response.choices[0].message.content
-        return message
-
-    def answer_question(self, question: str):
-        resp = client.responses.create(
-            model="gpt-5",
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_text",
-                            "text": (
-                                "Ви юридичний помічник. Відповідайте ЛИШЕ за результатами file_search і ЛИШЕ українською.\n"
-                                "Обовʼязково наводьте цитати з файлів з vectore stores\n"
-                                "Обовʼязково вказуйте з якої статті якого саме документу.\n\n"
-                                f"Питання: {question}"
-                            ),
-                        }
-                    ],
-                }
-            ],
-            tools=[
-                {
-                    "type": "file_search",
-                    "vector_store_ids": [CFG.VECTOR_STORE_ID],
-                    "max_num_results": 12,
-                    # optional metadata filters:
-                    # "filters": {
-                    #   "type": "and",
-                    #   "filters": [
-                    #     {"type": "eq",  "key": "jurisdiction", "value": "HU"},
-                    #     {"type": "in",  "key": "tags", "value": ["employment"]}
-                    #   ]
-                    # }
-                }
-            ],
-        )
-        # simplest way to get the model’s text:
-        return resp.output_text
-
-    def recognize(self, file_path: str):
-        with open(file_path, "rb") as f:
-            img_b64 = base64.b64encode(f.read()).decode("utf-8")
-
-        response_text = None
-        payment_data = None
+    def get_filters(self, question: str):
         try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",  # or gpt-4o or "gpt-4-vision-preview"
-                messages=[
+            log(log.INFO, "Asking GPT: %s", question)
+            start_time = datetime.now()
+            QUERY_SYSTEM_PROMPT = """
+            You are a financial query planner. You MUST output ONLY valid JSON. 
+            Do NOT include explanations or natural language. 
+            Your job is to convert user questions into a JSON query plan with the following structure:
+
+            {
+            "action": "sum" | "list" | "count" | null,
+            "filters": {
+                "date": {
+                "gte": "YYYY-MM-DD" | null,
+                "lte": "YYYY-MM-DD" | null
+                },
+                "number": "number" | null,
+                "payment_date": "string" | null,
+                "receiving_date": "string" | null,
+                "summ": "number" | null,
+                "summ_words": "string" | null,
+                "payment_purpose": "string" | null,
+                "payer_name": "string" | null,
+                "payer_code": "string" | null,
+                "payer_bank_name": "string" | null,
+                "payer_bank_code": "string" | null,
+                "payer_iban": "string" | null,
+                "recipient_name": "string" | null,
+                "recipient_code": "string" | null,
+                "recipient_bank_name": "string" | null,
+                "recipient_bank_code": "string" | null,
+                "recipient_iban": "string" | null
+            }
+            }
+
+            All filter fields MUST exist in the output and MUST be explicit null if not used.
+
+            ---
+
+            ### ACTION RULES
+
+            1. If the question asks:
+            - “скільки транзакцій”, “скільки є”, “кількість” 
+                → action = "count"
+            - “яка сума”, “яка загальна сума”, “сума транзакцій” 
+                → action = "sum"
+            - “список транзакцій”, “покажи транзакції”, “виведи транзакції”
+                → action = "list"
+            - If no clear action is present or question is irrelevant → action = null
+
+            2. You must never invent actions not listed above.
+
+            ---
+
+            ### FILTER RULES
+
+            You must extract ANY combination of filters referenced in the user question:
+
+            - Name of the payer or recipient  
+            (“платник <name>”, “отримувач <name>”,  
+            “платник чи отримувач <name>”)  
+            → set `payer_name` = <name> OR `recipient_name` = <name>  
+            If text says “платник чи отримувач <name>” → set BOTH fields.
+
+            - IBAN  
+            (“платник має <IBAN>”, “рахунок платника чи отримувача <IBAN>”)
+            → set payer_iban / recipient_iban as appropriate  
+            If question says “чи отримувача”, fill both fields.
+
+            - Date ranges  
+            Example: “з 2024-01-10 по 2024-02-01”  
+            → date.gte = “2024-01-10”  
+            → date.lte = “2024-02-01”
+
+            - Payment purpose  
+            (“призначенням платежу <text>”)  
+            → payment_purpose = <text>
+
+            - If a filter is NOT mentioned → MUST set it to null.
+
+            ---
+
+            ### IRRELEVANT QUESTION RULE
+
+            If the question is NOT about transactions, sums, counts, lists, 
+            payers, recipients, IBANs, payment purpose, dates, or amounts,
+            return:
+
+            {
+            "action": null,
+            "filters": {}
+            }
+
+            ---
+
+            ### EXAMPLES (CRITICAL)
+
+            1) “Скільки зберігається в базі транзакцій де платник чи отримувач ТОВ Сонях?”
+            → action = "count"
+            → payer_name = "ТОВ Сонях", recipient_name = "ТОВ Сонях"
+
+            2) “Яка сума транзакцій де платник чи отримувач має IBAN UA123456789?”
+            → action = "sum"
+            → payer_iban = "UA123456789", recipient_iban = "UA123456789"
+
+            3) “Скільки транзакцій з призначенням платежу Оренда?”
+            → action = "count"
+            → payment_purpose = "Оренда"
+
+            4) “Список транзакцій з 2024-01-01 по 2024-02-01”
+            → action = "list"
+            → date.gte = "2024-01-01", date.lte = "2024-02-01"
+
+            5) “Яка сума транзакцій по рахунку UA7777777?”
+            → action = "sum"
+            → set payer_iban = "UA7777777" AND recipient_iban = "UA7777777"
+
+            6) “Сума транзакцій з 2024-01-10 по 2024-02-01 де платник ТОВ Агросвіт”
+            → action = "sum"
+            → date.gte/date.lte set
+            → payer_name = "ТОВ Агросвіт"
+
+            7) Time expressions in any language ("last month", "перший квартал минулого року", "минулого тижня", etc.) 
+            MUST be converted into ISO dates in the filters.date object.
+            
+            8). Quarter mapping:
+            Q1 = Jan 1 – Mar 31
+            Q2 = Apr 1 – Jun 30
+            Q3 = Jul 1 – Sep 30
+            Q4 = Oct 1 – Dec 31
+
+            Example:
+            “перший квартал минулого року” → last year Q1.
+
+            ---
+
+            ### ABSOLUTE REQUIREMENTS
+
+            - ALWAYS output ALL filter fields, even if null.
+            - NEVER output extra fields.
+            - NEVER output natural language.
+            - ONLY output the JSON object.
+            - Do not invent missing information.
+
+            """
+
+            response = client.responses.create(
+                model="gpt-5.1",
+                input=[
+                    {"role": "system", "content": QUERY_SYSTEM_PROMPT},
                     {
                         "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": (
-                                    "Could you please recognize all data from this document\n"
-                                    "This is a ukrainian bank payment instruction\n"
-                                    "Please, return a json with these fields: ['number', 'payment_date', 'receiving_date', 'summ', 'summ_words', 'payment_purpose', 'payer_name', 'payer_code', 'payer_bank_name', 'payer_bank_code', 'payer_iban', 'recipient_name', 'recipient_code', 'recipient_bank_name', 'recipient_bank_code', 'recipient_iban']\n"
-                                    "Do not make up anything. If it's a problem to recognize some value, please, set null for it.\n"
-                                    "Extract the information and return ONLY valid JSON without any markdown formatting or additional text. Do not wrap the response in code blocks.\n"
-                                ),
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{img_b64}"
-                                },
-                            },
-                        ],
-                    }
+                        "content": [{"type": "input_text", "text": question}],
+                    },
                 ],
+                reasoning={"effort": "low"},
+                text={"verbosity": "low"},
             )
-            response_text = response.choices[0].message.content
+            answer_time = datetime.now() - start_time
+            log(log.INFO, "Got GPT answer in %s", answer_time)
+            return QueryFilters.model_validate_json(response.output_text)
         except Exception as e:
-            log(log.ERROR, "Failed to get a LLM response. %", e)
-            return None, None
-
-        try:
-            payment_data = json.loads(response_text)
-            log(log.INFO, "Payment data has been successfully recognized")
-            return payment_data, None
-        except Exception as e:
-            log(log.ERROR, "Failed to recognize data. %", e)
-            return None, response_text
+            log(log.ERROR, f"Error while asking GPT: {e}")
+            return f"Трясця! Сталася помилка: {e}"
 
 
 gpt_service = ChatGPT()
