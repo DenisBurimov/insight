@@ -32,7 +32,7 @@ def login():
         log(log.INFO, "Login successful. current_user: [%s]", current_user.name)
         log(log.INFO, "Login successful")
         flash("Login successful.", "success")
-        return redirect(url_for("news.get_all"))
+        return redirect(url_for("main.index"))
 
     elif form.is_submitted():
         flash("Invalid credentials", "danger")

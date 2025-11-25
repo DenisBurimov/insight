@@ -24,6 +24,7 @@ def create_app(environment="development"):
         main_blueprint,
         auth_blueprint,
         users_blueprint,
+        chat_blueprint,
     )
     from app.routes import (
         api_payments_blueprint,
@@ -62,6 +63,7 @@ def create_app(environment="development"):
     app.register_blueprint(main_blueprint)
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(users_blueprint)
+    app.register_blueprint(chat_blueprint)
 
     # Api routes
     app.register_blueprint(api_payments_blueprint, url_prefix="/api/v1/payments")

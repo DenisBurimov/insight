@@ -2,7 +2,7 @@ import enum
 from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy import DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
@@ -39,6 +39,8 @@ class User(db.Model, UserMixin, ModelMixin):  # type: ignore
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
+
+    rooms = db.relationship("Room", back_populates="user", cascade="all, delete-orphan")
 
     @hybrid_property
     def password(self):

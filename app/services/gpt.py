@@ -183,6 +183,35 @@ class ChatGPT:
         except Exception as e:
             log(log.ERROR, f"Error while asking GPT: {e}")
             return f"Трясця! Сталася помилка: {e}"
+        
+    
+    def get_answer(self, question: str):
+        try:
+            log(log.INFO, "Asking GPT for answer: %s", question)
+            start_time = datetime.now()
+
+            RESPONSE_SYSTEM_PROMPT = """
+            You are a financial assistant. Provide clear and concise answers.
+            """
+
+            response = client.responses.create(
+                model="gpt-5.1",
+                input=[
+                    {"role": "system", "content": RESPONSE_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": question}],
+                    },
+                ],
+                reasoning={"effort": "low"},
+                text={"verbosity": "low"},
+            )
+            answer_time = datetime.now() - start_time
+            log(log.INFO, "Got GPT answer in %s", answer_time)
+            return response.output_text
+        except Exception as e:
+            log(log.ERROR, f"Error while asking GPT for answer: {e}")
+            return f"Трясця! Сталася помилка: {e}"
 
 
 gpt_service = ChatGPT()

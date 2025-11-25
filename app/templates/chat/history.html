@@ -1,0 +1,16 @@
+{% for message in messages %}
+{% if message.role == "user" %}
+<div class="flex justify-end items-center mb-2">
+  <span
+    class="inline-block p-2 rounded-lg bg-blue-400 dark:bg-darkSecondary text-black dark:text-white mr-2 max-w-xs">{{
+    message.content }}</span>
+  <img src="/static/img/user_avatar.png" class="w-8 h-8 rounded-full">
+</div>
+{% else %}
+<div class="flex justify-start items-center mb-2">
+  <img src="/static/img/bot_avatar.png" class="w-8 h-8 rounded-full mr-2">
+  <span class="inline-block p-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-black dark:text-white max-w-xs">{{
+    message.content }}</span>
+</div>
+{% endif %}
+{% endfor %}

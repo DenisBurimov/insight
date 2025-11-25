@@ -2,3 +2,4 @@
 from .main import main_blueprint
 from .users import users_blueprint
 from .auth import auth_blueprint
+from .chat import chat_blueprint
