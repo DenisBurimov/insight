@@ -1,0 +1,70 @@
+name: Deploy to GKE
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write  # required for Workload Identity Federation
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: []
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER }}
+          location: ${{ secrets.GKE_ZONE }}
+          project_id: ${{ secrets.PROJECT_ID }}
+
+      - name: Build and push image
+        id: build
+        run: |
+          TAG=$(git rev-parse --short HEAD)
+          IMAGE_BASE="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ secrets.ARTIFACT_REPO }}/${{ secrets.IMAGE_NAME }}"
+          IMAGE_URI="${IMAGE_BASE}:${TAG}"
+          LATEST_URI="${IMAGE_BASE}:latest"
+          echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
+
+          gcloud builds submit \
+            --project="${{ secrets.PROJECT_ID }}" \
+            --tag="${IMAGE_URI}" \
+            .
+
+          gcloud artifacts docker tags add \
+            --project="${{ secrets.PROJECT_ID }}" \
+            "${IMAGE_URI}" "${LATEST_URI}"
+
+      - name: Run database migrations
+        run: |
+          IMAGE_URI="${{ steps.build.outputs.image_uri }}"
+          kubectl delete job migrate -n insight --ignore-not-found
+          sed "s|REGION-docker.pkg.dev/PROJECT_ID/ARTIFACT_REPO/insight:latest|${IMAGE_URI}|g" \
+            gke/migrate-job.yaml | kubectl apply -f -
+          kubectl wait --for=condition=complete job/migrate -n insight --timeout=120s
+
+      - name: Roll out new image
+        run: |
+          IMAGE_URI="${{ steps.build.outputs.image_uri }}"
+          for WORKLOAD in deployment/web deployment/api deployment/celery-worker; do
+            kubectl set image ${WORKLOAD} ${WORKLOAD##*/}=${IMAGE_URI} -n insight
+          done
+          kubectl set image statefulset/celery-beat celery-beat=${IMAGE_URI} -n insight
+
+          kubectl rollout status deployment/web -n insight --timeout=120s
+          kubectl rollout status deployment/api -n insight --timeout=120s

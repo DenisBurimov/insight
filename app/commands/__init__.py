@@ -1,11 +1,8 @@
-import click
 from flask import Flask
 import sqlalchemy as sa
 from app import db
 import models as m
 from config import config
-from app.services.gpt import ChatGPT
-from app.logger import log
 
 CFG = config()
 

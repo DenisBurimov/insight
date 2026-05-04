@@ -46,6 +46,7 @@ def preview():
         payment = db.session.scalar(payment_query)
 
         if recognition:
+            assert filename
             if payment:
                 log(log.INFO, "New recognition started for payment: %s", payment)
                 now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -61,7 +62,7 @@ def preview():
                 log(log.ERROR, "File does not exist %s", file_path)
                 print(f"File {filename} not found")
 
-            data, response_text = gpt_service.recognize(file_path)
+            data, response_text = gpt_service.recognize(file_path)  # type: ignore[attr-defined]
 
             try:
                 if data:

@@ -4,6 +4,30 @@
 ![Description](app/static/img/screen_01.png)
 ![Description](app/static/img/screen_02.png)
 
+## Architecture
+
+```mermaid
+graph LR
+    Client["Browser / Claude.ai"]
+    Ingress["GKE Ingress / Traefik\nTLS termination"]
+    Flask["Flask + Gunicorn :8080\nOCR dashboard · auth · payments"]
+    FastAPI["FastAPI + uvicorn :8001\nMCP server"]
+    Celery["Celery Workers\nasync tasks"]
+    Beat["Celery Beat\nscheduler"]
+    Redis[("Redis\nbroker + cache")]
+    Postgres[("PostgreSQL\nprimary store")]
+    GCP["GCP\nSecret Manager · Artifact Registry\nCloud Build · GKE"]
+
+    Client -->|HTTPS| Ingress
+    Ingress -->|"/ *"| Flask
+    Ingress -->|"/mcp"| FastAPI
+    Flask & FastAPI --> Postgres
+    Flask -->|enqueue| Redis
+    Celery -->|consume| Redis
+    Beat -->|schedule| Redis
+    Flask & FastAPI & Celery -.->|Workload Identity| GCP
+```
+
 
 ## To run the project locally set up venv and activate it
 ```

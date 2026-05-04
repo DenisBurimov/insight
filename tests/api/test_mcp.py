@@ -1,5 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
+from httpx import Response
 from sqlalchemy.orm import Session
 
 import models as m
@@ -27,7 +27,7 @@ def make_payment(session: Session, **kwargs) -> m.Payment:
     return payment
 
 
-def mcp_post(client: TestClient, method: str, params: dict | None = None, id_: int = 1) -> dict:
+def mcp_post(client: TestClient, method: str, params: dict | None = None, id_: int = 1) -> Response:
     body: dict = {"jsonrpc": "2.0", "id": id_, "method": method}
     if params is not None:
         body["params"] = params
@@ -201,7 +201,7 @@ def test_get_payment_not_found(client: TestClient):
 
 
 def test_get_payment_uses_correct_id(client: TestClient, db_session: Session):
-    p1 = make_payment(db_session, filename="first.jpg", summ="100.00")
+    make_payment(db_session, filename="first.jpg", summ="100.00")
     p2 = make_payment(db_session, filename="second.jpg", summ="200.00")
 
     response = mcp_post(client, "tools/call", {"name": "get_payment", "arguments": {"id": p2.id}})

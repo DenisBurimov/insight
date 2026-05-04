@@ -1,51 +1,42 @@
-FROM python:3.13
+# Stage 1: build — compile Python wheels without system bloat
+FROM python:3.13-slim AS builder
 
-# Установим Firefox и зависимости
-RUN apt-get update && apt-get install -y \
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --target=/install -r requirements.txt && \
+    pip install --no-cache-dir --target=/install gunicorn ipython
+
+
+# Stage 2: runtime — add system deps and copy compiled packages
+FROM python:3.13-slim
+
+# Firefox + geckodriver are required at runtime for OCR (Selenium)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     firefox-esr \
     wget \
     curl \
-    gnupg \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN firefox --version || (echo "❌ Firefox not installed or broken!" && exit 1)
-RUN if ! firefox --version >/dev/null 2>&1; then \
-      echo "❌ Firefox is not installed or not working!" && exit 1; \
-    fi
-
-
-# Установим geckodriver
 RUN GECKODRIVER_VERSION=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest \
     | grep "tag_name" | cut -d '"' -f 4) \
-    && wget -qO- https://github.com/mozilla/geckodriver/releases/download/$GECKODRIVER_VERSION/geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz \
+    && wget -qO- "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz" \
     | tar -xz -C /usr/local/bin
 
-# Add user app
-RUN python -m pip install -U pip
-RUN adduser -uid 2001 app
+COPY --from=builder /install /usr/local/lib/python3.13/site-packages/
+
+RUN useradd --uid 2001 --create-home app
 USER app
 WORKDIR /home/app
 
-# Set environment variables
-ENV PYTHONFAULTHANDLER 1
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONHASHSEED random
-ENV PIP_NO_CACHE_DIR off
-ENV PIP_DISABLE_PIP_VERSION_CHECK on
-ENV PATH="/home/app/.local/bin:${PATH}"
-
-# Install app dependencies
-COPY --chown=app:app requirements.txt /home/app/requirements.txt
-
-RUN pip install --user --no-cache-dir -r requirements.txt
-RUN pip install --user gunicorn ipython
+ENV PYTHONFAULTHANDLER=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED=random \
+    FLASK_APP=wsgi.py \
+    PORT=8080
 
 COPY --chown=app:app . .
-ENV PORT 8080
-ENV FLASK_APP=wsgi.py
-
 
 EXPOSE 8080
-
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "wsgi:app"]

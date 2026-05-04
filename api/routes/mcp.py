@@ -1,8 +1,8 @@
 from typing import Any
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Body, Depends, Header, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Header, Request, Response
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 import models as m
@@ -11,6 +11,42 @@ from app.logger import log
 
 router = APIRouter()
 
+
+# ── Pydantic request/response schemas ─────────────────────────────────────────
+
+class ToolCallParams(BaseModel):
+    name: str | None = None
+    arguments: dict[str, Any] = {}
+
+
+class MCPRequest(BaseModel):
+    jsonrpc: str = "2.0"
+    id: int | str | None = None
+    method: str = ""
+    params: ToolCallParams | None = None
+
+
+class ContentItem(BaseModel):
+    type: str = "text"
+    text: str
+
+
+class MCPResult(BaseModel):
+    content: list[ContentItem] | None = None
+    tools: list[dict] | None = None
+    protocolVersion: str | None = None
+    capabilities: dict | None = None
+    serverInfo: dict | None = None
+    error: dict | None = None
+
+
+class MCPResponse(BaseModel):
+    jsonrpc: str = "2.0"
+    id: int | str | None = None
+    result: MCPResult
+
+
+# ── Tool definitions ───────────────────────────────────────────────────────────
 
 TOOLS = [
     {
@@ -38,6 +74,8 @@ TOOLS = [
     },
 ]
 
+
+# ── Tool handlers ──────────────────────────────────────────────────────────────
 
 def _handle_get_payments(session: Session, args: dict) -> str:
     stmt = sa.select(m.Payment)
@@ -85,36 +123,39 @@ def _handle_get_payment(session: Session, args: dict) -> str:
     return "\n".join(fields)
 
 
+# ── Routes ─────────────────────────────────────────────────────────────────────
+
 @router.get("")
 def mcp_ping() -> dict:
+    log(log.INFO, "MCP: GET /mcp — health ping")
     return {"status": "ok"}
 
 
-@router.post("")
+@router.post("", response_model=MCPResponse)
 def mcp(
     request: Request,
-    body: dict = Body(default={}),
+    body: MCPRequest,
     session: Session = Depends(get_db),
     authorization: str = Header(default="", alias="Authorization"),
 ):
-    log(log.INFO, "MCP: POST %s | body: %.200s", request.url.path, str(body))
+    log(log.INFO, "MCP: POST %s | body: %.200s", request.url.path, body.model_dump_json())
 
-    method = body.get("method", "")
-    params = body.get("params", {})
-    id_ = body.get("id")
+    method = body.method
+    params = body.params or ToolCallParams()
+    id_ = body.id
 
-    def ok(result: Any) -> dict:
-        return {"jsonrpc": "2.0", "id": id_, "result": result}
+    def ok(result: MCPResult) -> MCPResponse:
+        return MCPResponse(jsonrpc="2.0", id=id_, result=result)
 
-    def text(content: str) -> dict:
-        return ok({"content": [{"type": "text", "text": content}]})
+    def text(content: str) -> MCPResponse:
+        return ok(MCPResult(content=[ContentItem(type="text", text=content)]))
 
     if method == "initialize":
-        return ok({
-            "protocolVersion": "2024-11-05",
-            "capabilities": {"tools": {}},
-            "serverInfo": {"name": "insight-mcp", "version": "1.0.0"},
-        })
+        return ok(MCPResult(
+            protocolVersion="2024-11-05",
+            capabilities={"tools": {}},
+            serverInfo={"name": "insight-mcp", "version": "1.0.0"},
+        ))
 
     if method and method.startswith("notifications/"):
         return Response(status_code=202)
@@ -122,15 +163,19 @@ def mcp(
     log(log.INFO, "MCP: POST %s -> 200", request.url.path)
 
     if method == "tools/list":
-        return ok({"tools": TOOLS})
+        log(log.INFO, "MCP: tools/list -> %d tools", len(TOOLS))
+        return ok(MCPResult(tools=TOOLS))
 
     if method == "tools/call":
-        name = params.get("name")
-        args = params.get("arguments", {})
+        name = params.name
+        args = params.arguments
+        log(log.INFO, "MCP: tools/call name=%s args=%s", name, args)
         if name == "get_payments":
             return text(_handle_get_payments(session, args))
         if name == "get_payment":
             return text(_handle_get_payment(session, args))
-        return ok({"error": {"code": -32601, "message": f"Unknown tool: {name}"}})
+        log(log.WARNING, "MCP: unknown tool %r", name)
+        return ok(MCPResult(error={"code": -32601, "message": f"Unknown tool: {name}"}))
 
-    return ok({"error": {"code": -32601, "message": "Method not found"}})
+    log(log.WARNING, "MCP: method not found: %r", method)
+    return ok(MCPResult(error={"code": -32601, "message": "Method not found"}))

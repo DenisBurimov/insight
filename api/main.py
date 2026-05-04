@@ -8,6 +8,11 @@ app = FastAPI()
 app.include_router(mcp_router, prefix="/mcp")
 
 
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
+
 @app.get("/routes")
 def list_routes():
     return [

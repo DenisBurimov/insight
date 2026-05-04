@@ -27,7 +27,7 @@ def get_history_messages(room_id: int) -> list[m.Message]:
     messages = db.session.scalars(
         sa.select(m.Message).where(m.Message.room_id == room_id).order_by(m.Message.created_at)
     ).all()
-    return messages
+    return list(messages)
 
 def save_message_user(room_id: int, content: str) -> m.Message:
     user_message = m.Message(
