@@ -41,7 +41,7 @@ def create_app(environment="development"):
     log(log.INFO, "Configuration: [%s]", configuration.APP_ENV)
 
     if configuration.APP_ENV == "testing":
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///testing.db"
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     elif configuration.DATABASE_CONNECTION == "local":
         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
             "SQLALCHEMY_DATABASE_URI"
