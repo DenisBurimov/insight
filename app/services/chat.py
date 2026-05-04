@@ -1,6 +1,7 @@
 from datetime import datetime
 import sqlalchemy as sa
-from app import db, models as m
+from app import db
+import models as m
 from app.logger import log
 
 def get_room(user_id: int) -> m.Room:

@@ -13,7 +13,8 @@ pydantic
 python-multipart
 pydantic-settings
 pandas
-pydantic
-pydantic-settings
 pytest
 openai
+fastapi
+uvicorn[standard]
+httpx

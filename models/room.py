@@ -1,13 +1,9 @@
-import enum
 from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy import DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.ext.hybrid import hybrid_property
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin, AnonymousUserMixin
+from sqlalchemy.orm import Mapped, mapped_column
 from .utils import ModelMixin, gen_uuid
-from app import db
+from database import db
 
 
 class Room(db.Model, ModelMixin):  # type: ignore
@@ -28,8 +24,6 @@ class Room(db.Model, ModelMixin):  # type: ignore
     )
 
     user = db.relationship("User", back_populates="rooms")
-
-
 
     def __repr__(self):
         return f"<{self.id}: {self.name}>"

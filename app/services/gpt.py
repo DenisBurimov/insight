@@ -5,7 +5,14 @@ from app.logger import log
 from pydantic import BaseModel
 from typing import Literal, Optional, Dict, Any
 
-client = openai.OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
+_client: openai.OpenAI | None = None
+
+
+def _get_client() -> openai.OpenAI:
+    global _client
+    if _client is None:
+        _client = openai.OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
+    return _client
 
 
 class FilterDate(BaseModel):
@@ -165,7 +172,7 @@ class ChatGPT:
 
             """
 
-            response = client.responses.create(
+            response = _get_client().responses.create(
                 model="gpt-5.1",
                 input=[
                     {"role": "system", "content": QUERY_SYSTEM_PROMPT},
@@ -194,7 +201,7 @@ class ChatGPT:
             You are a financial assistant. Provide clear and concise answers.
             """
 
-            response = client.responses.create(
+            response = _get_client().responses.create(
                 model="gpt-5.1",
                 input=[
                     {"role": "system", "content": RESPONSE_SYSTEM_PROMPT},

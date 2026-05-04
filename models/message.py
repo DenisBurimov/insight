@@ -3,11 +3,8 @@ from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy import DateTime
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.ext.hybrid import hybrid_property
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin, AnonymousUserMixin
 from .utils import ModelMixin, gen_uuid
-from app import db
+from database import db
 
 
 class MessageSender(str, enum.Enum):
@@ -34,8 +31,5 @@ class Message(db.Model, ModelMixin):  # type: ignore
         default=lambda: datetime.now(timezone.utc),
     )
 
-
     def __repr__(self):
         return f"<{self.id}: {self.role} - {self.content[:20]}...>"
-
-

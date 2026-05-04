@@ -1,11 +1,11 @@
 import click
 from flask import Flask
 import sqlalchemy as sa
-from app import db, models as m
+from app import db
+import models as m
 from config import config
 from app.services.gpt import ChatGPT
 from app.logger import log
-
 
 CFG = config()
 
@@ -23,13 +23,6 @@ def init(app: Flask):
             # some_arg=some_arg,
         )
 
-    @app.cli.command()
-    @click.option("--flag", type=bool)
-    def sample(flag: bool):
-        """Sample command"""
-
-        print(f"Flag: {flag}")
-
     @app.cli.command("get-users")
     def get_users():
         users = db.session.scalars(sa.select(m.User)).all()
@@ -45,41 +38,3 @@ def init(app: Flask):
             is_active=True,
         ).save()
         print("Admin created: ", admin)
-
-    @app.cli.command()
-    def read_img():
-        from app.services.gpt import gpt_service
-
-        response = gpt_service.recognize("app/static/payments/payments_001.jpg")
-        print(response)
-
-    @app.cli.command()
-    def get_payments():
-        payments = db.session.scalars(sa.select(m.Payment)).all()
-
-        if not payments:
-            print("No payments found")
-            return
-
-        for payment in payments:
-            print(payment)
-
-    @app.cli.command()
-    def delete_payments():
-        payments = db.session.scalars(sa.select(m.Payment)).all()
-        for payment in payments:
-            db.session.delete(payment)
-
-        try:
-            db.session.commit()
-            print("Payments deleted")
-        except Exception as e:
-            print(e)
-
-    @app.cli.command()
-    def ask_filters():
-        from app.services.gpt import gpt_service
-
-        question = "Скільки транзакцій де платник чи отримувач Іван Іванич Іванов?"
-        res = gpt_service.get_filters(question)
-        print(res)

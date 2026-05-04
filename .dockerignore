@@ -36,6 +36,7 @@ node_modules/
 # ignore files
 *.env
 *.env*
+!.env.example
 *.pyc
 /*.sqlite3
 nifty*.json

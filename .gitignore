@@ -2,12 +2,15 @@
 __pycache__/
 env/
 .venv/
+.vscode/
+.claude/
 .pytest_cache/
 node_modules/
 
 # ignore files
 *.env
 *.env*
+!.env.example
 *.pyc
 /*.sqlite3
 
@@ -18,6 +21,7 @@ node_modules/
 # Dump files
 *_dump.json
 
+TODO.md
 .DS_Store
 app/services/data/*
 app/data/*

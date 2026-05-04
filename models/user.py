@@ -2,12 +2,12 @@ import enum
 from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy import DateTime
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from .utils import ModelMixin
-from app import db
+from database import db
 
 
 class UserRole(str, enum.Enum):

@@ -3,19 +3,18 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template
 import sqlalchemy as sa
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from werkzeug.exceptions import HTTPException
 from flask_wtf.csrf import CSRFProtect
 
 from app.logger import log
+from database import db
 
 
 login_manager = LoginManager()
 csrf = CSRFProtect()
 migration = Migrate()
-db = SQLAlchemy()
 
 
 def create_app(environment="development"):
@@ -53,7 +52,7 @@ def create_app(environment="development"):
     db.init_app(app)
     migration.init_app(app, db)
 
-    from app import models as m  # noqa: F401
+    import models as m  # noqa: F401
 
     # Set up extensions.
     login_manager.init_app(app)

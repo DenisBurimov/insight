@@ -2,7 +2,8 @@ import os
 from flask import Blueprint, Response, jsonify, request
 import sqlalchemy as sa
 
-from app import db, models as m
+from app import db
+import models as m
 from config import config
 from app.logger import log
 

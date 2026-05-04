@@ -4,7 +4,8 @@ from datetime import datetime
 import sqlalchemy as sa
 from flask import Blueprint, request, render_template
 from config import config
-from app import db, models as m, forms as f
+from app import db, forms as f
+import models as m
 from app.services.gpt import gpt_service
 from app.logger import log
 

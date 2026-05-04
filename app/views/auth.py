@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, url_for, redirect, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app import forms as f, db
-from app.models import User
+from models import User
 from app.logger import log
 from config import config
 

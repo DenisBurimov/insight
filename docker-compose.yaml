@@ -15,7 +15,7 @@ services:
       - "8080"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.kub.rule=Host(`lawbot.kub-app.com`)"
+      - "traefik.http.routers.kub.rule=Host(`your-domain.com`)"
       - "traefik.http.services.kub.loadbalancer.server.port=8080"
       - "traefik.http.routers.kub.tls=true"
       - "traefik.http.routers.kub.tls.certresolver=resolver"
