@@ -23,6 +23,10 @@ class BaseConfig(BaseSettings):
 
     PAYMENTS_SOURCE_FOLDER: str = "static/payments"
 
+    CELERY_BROKER_URL: str = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
+    GMAIL_TOKEN_PATH: str = "token.pickle"
+
     @staticmethod
     def configure(app):
         # Implement this method to do further configuration on your app.

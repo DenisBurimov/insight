@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+
   app:
     build:
       context: .
@@ -9,13 +17,59 @@ services:
       - ./.env
     environment:
       APP_ENV: production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
     ports:
       - "8080:8080"
     expose:
       - "8080"
+    volumes:
+      - app_data:/home/app/app/static/payments
+    depends_on:
+      - redis
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.kub.rule=Host(`your-domain.com`)"
       - "traefik.http.services.kub.loadbalancer.server.port=8080"
       - "traefik.http.routers.kub.tls=true"
       - "traefik.http.routers.kub.tls.certresolver=resolver"
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    command: celery -A app.celery worker --loglevel=info
+    env_file:
+      - ./.env
+    environment:
+      APP_ENV: production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - ./token.pickle:/home/app/token.pickle:ro
+    depends_on:
+      - redis
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    command: celery -A app.celery beat --loglevel=info
+    env_file:
+      - ./.env
+    environment:
+      APP_ENV: production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - ./token.pickle:/home/app/token.pickle:ro
+      - celery_beat_data:/home/app
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+  app_data:
+  celery_beat_data:

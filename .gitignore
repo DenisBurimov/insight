@@ -31,3 +31,4 @@ certs/
 
 cloud-sql-proxy
 creds.json
+token.pickle
