@@ -34,6 +34,29 @@ services:
       - "traefik.http.routers.kub.tls=true"
       - "traefik.http.routers.kub.tls.certresolver=resolver"
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    command: sh ./start_api.sh
+    env_file:
+      - ./.env
+    environment:
+      APP_ENV: production
+    ports:
+      - "8001:8001"
+    expose:
+      - "8001"
+    depends_on:
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`your-domain.com`) && (PathPrefix(`/mcp`) || PathPrefix(`/routes`))"
+      - "traefik.http.services.api.loadbalancer.server.port=8001"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=resolver"
+
   celery-worker:
     build:
       context: .

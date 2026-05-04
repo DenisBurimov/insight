@@ -1,0 +1,93 @@
+# Flask web app (gunicorn).
+# Uses a single replica because the payments PVC is ReadWriteOnce.
+# To scale horizontally, migrate payment file storage to GCS or Filestore
+# and change accessModes to ReadWriteMany.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: payments-pvc
+  namespace: insight
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard-rwo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: insight
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      serviceAccountName: insight-sa
+      containers:
+        - name: web
+          image: REGION-docker.pkg.dev/PROJECT_ID/ARTIFACT_REPO/insight:latest
+          # start_web.sh runs: flask db upgrade && gunicorn -w 4 -b 0.0.0.0:8080 wsgi:app
+          # Prefer the migrate-job.yaml approach; keep the upgrade here as a safety net.
+          command: ["sh", "./start_web.sh"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: insight-config
+            - secretRef:
+                name: insight-secrets
+          volumeMounts:
+            - name: payments
+              mountPath: /home/app/app/static/payments
+            - name: gmail-token
+              mountPath: /secrets/token.pickle
+              subPath: token.pickle
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+      volumes:
+        - name: payments
+          persistentVolumeClaim:
+            claimName: payments-pvc
+        - name: gmail-token
+          secret:
+            secretName: gmail-token
+            optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: insight
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

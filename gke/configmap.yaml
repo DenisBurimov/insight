@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: insight-config
+  namespace: insight
+data:
+  APP_ENV: "production"
+  FLASK_APP: "wsgi.py"
+  PORT: "8080"
+  CELERY_BROKER_URL: "redis://redis:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis:6379/1"
+  GMAIL_TOKEN_PATH: "/secrets/token.pickle"

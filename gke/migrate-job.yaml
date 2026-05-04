@@ -1,0 +1,31 @@
+# Run once before deploying a new image version:
+#   kubectl delete job migrate -n insight --ignore-not-found
+#   kubectl apply -f gke/migrate-job.yaml
+#   kubectl wait --for=condition=complete job/migrate -n insight --timeout=120s
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: insight
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      serviceAccountName: insight-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: REGION-docker.pkg.dev/PROJECT_ID/ARTIFACT_REPO/insight:latest
+          command: ["flask", "db", "upgrade"]
+          envFrom:
+            - configMapRef:
+                name: insight-config
+            - secretRef:
+                name: insight-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"

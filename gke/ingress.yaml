@@ -1,0 +1,50 @@
+# GKE-native HTTPS ingress using Google-managed TLS certificates.
+# Pre-requisite: reserve a static external IP and point your domain DNS to it.
+#   gcloud compute addresses create insight-ip --global
+#   gcloud compute addresses describe insight-ip --global  # get the IP
+#
+# Replace "your-domain.com" with your actual domain in both resources below.
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: insight-cert
+  namespace: insight
+spec:
+  domains:
+    - your-domain.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: insight-ingress
+  namespace: insight
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: insight-ip
+    networking.gke.io/managed-certificates: insight-cert
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+    - host: your-domain.com
+      http:
+        paths:
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /routes
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80

@@ -1,0 +1,60 @@
+# FastAPI MCP server (uvicorn on port 8001).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: insight
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      serviceAccountName: insight-sa
+      containers:
+        - name: api
+          image: REGION-docker.pkg.dev/PROJECT_ID/ARTIFACT_REPO/insight:latest
+          command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: insight-config
+            - secretRef:
+                name: insight-secrets
+          readinessProbe:
+            httpGet:
+              path: /routes
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /routes
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: insight
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 80
+      targetPort: 8001
+  type: ClusterIP
