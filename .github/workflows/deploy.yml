@@ -12,6 +12,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: []
+    # Skip when GCP secrets are not configured (e.g. forks or portfolio viewing)
+    if: ${{ secrets.WIF_PROVIDER != '' }}
 
     steps:
       - uses: actions/checkout@v4
