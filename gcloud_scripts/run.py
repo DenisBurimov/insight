@@ -14,12 +14,12 @@ def run_cmd(
     return subprocess.run(cmd, check=check, text=True, capture_output=capture_output)
 
 
-CLOUD_RUN_SERVICE = os.environ.get("CLOUD_RUN_SERVICE")
-CLOUD_RUN_REGION = os.environ.get("CLOUD_RUN_REGION")
-SPANNER_PROJECT_ID = os.environ.get("SPANNER_PROJECT_ID")
-ARTIFACT_REPO = os.environ.get("ARTIFACT_REPO")
-IMG_NAME = os.environ.get("IMG_NAME")
-TAG_NAME = os.environ.get("TAG_NAME")
+CLOUD_RUN_SERVICE = os.environ.get("CLOUD_RUN_SERVICE", "")
+CLOUD_RUN_REGION = os.environ.get("CLOUD_RUN_REGION", "")
+SPANNER_PROJECT_ID = os.environ.get("SPANNER_PROJECT_ID", "")
+ARTIFACT_REPO = os.environ.get("ARTIFACT_REPO", "")
+IMG_NAME = os.environ.get("IMG_NAME", "")
+TAG_NAME = os.environ.get("TAG_NAME", "")
 
 if not all(
     [
