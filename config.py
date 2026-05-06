@@ -15,6 +15,7 @@ class BaseConfig(BaseSettings):
     DATABASE_CONNECTION: str = "local"
     SCHEDULER_ACCESS_TOKEN: str = "scheduler-token"
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///app.db"
+    CLOUD_SQL_INSTANCE: str = ""
     OPENAI_API_KEY: str = "open-ai-key"
 
     ADMIN_USERNAME: str = "admin_name"
