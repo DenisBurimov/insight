@@ -1,18 +1,15 @@
 from typing import Any
 
-import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Header, Request, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import models as m
 from api.database import get_db
+from api.repositories.payment_repo import PaymentRepository
 from app.logger import log
 
 router = APIRouter()
 
-
-# ── Pydantic request/response schemas ─────────────────────────────────────────
 
 class ToolCallParams(BaseModel):
     name: str | None = None
@@ -46,8 +43,6 @@ class MCPResponse(BaseModel):
     result: MCPResult
 
 
-# ── Tool definitions ───────────────────────────────────────────────────────────
-
 TOOLS = [
     {
         "name": "get_payments",
@@ -55,9 +50,18 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "payer_name": {"type": "string", "description": "Filter by payer name (partial match)"},
-                "recipient_name": {"type": "string", "description": "Filter by recipient name (partial match)"},
-                "limit": {"type": "integer", "description": "Max results to return (default 100, max 500)"},
+                "payer_name": {
+                    "type": "string",
+                    "description": "Filter by payer name (partial match)",
+                },
+                "recipient_name": {
+                    "type": "string",
+                    "description": "Filter by recipient name (partial match)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results to return (default 100, max 500)",
+                },
             },
         },
     },
@@ -75,19 +79,18 @@ TOOLS = [
 ]
 
 
-# ── Tool handlers ──────────────────────────────────────────────────────────────
-
 async def _handle_get_payments(session: AsyncSession, args: dict) -> str:
-    stmt = sa.select(m.Payment)
-    if args.get("payer_name"):
-        stmt = stmt.where(m.Payment.payer_name.ilike(f"%{args['payer_name']}%"))
-    if args.get("recipient_name"):
-        stmt = stmt.where(m.Payment.recipient_name.ilike(f"%{args['recipient_name']}%"))
     limit = min(int(args.get("limit", 100)), 500)
-    stmt = stmt.order_by(m.Payment.created_at.desc()).limit(limit)
-    rows = (await session.scalars(stmt)).all()
+    repo = PaymentRepository(session)
+    rows = await repo.list(
+        payer_name=args.get("payer_name"),
+        recipient_name=args.get("recipient_name"),
+        limit=limit,
+    )
 
-    lines = ["id,filename,number,payment_date,summ,payer_name,payer_iban,recipient_name,recipient_iban,payment_purpose"]
+    lines = [
+        "id,filename,number,payment_date,summ,payer_name,payer_iban,recipient_name,recipient_iban,payment_purpose"
+    ]
     for r in rows:
         purpose = (r.payment_purpose or "").replace(",", " ")
         lines.append(
@@ -99,7 +102,8 @@ async def _handle_get_payments(session: AsyncSession, args: dict) -> str:
 
 
 async def _handle_get_payment(session: AsyncSession, args: dict) -> str:
-    payment = await session.scalar(sa.select(m.Payment).where(m.Payment.id == int(args["id"])))
+    repo = PaymentRepository(session)
+    payment = await repo.get_by_id(int(args["id"]))
     if not payment:
         return "Payment not found"
     fields = [
@@ -123,8 +127,6 @@ async def _handle_get_payment(session: AsyncSession, args: dict) -> str:
     return "\n".join(fields)
 
 
-# ── Routes ─────────────────────────────────────────────────────────────────────
-
 @router.get("")
 async def mcp_ping() -> dict:
     log(log.INFO, "MCP: GET /mcp — health ping")
@@ -138,7 +140,12 @@ async def mcp(
     session: AsyncSession = Depends(get_db),
     authorization: str = Header(default="", alias="Authorization"),
 ):
-    log(log.INFO, "MCP: POST %s | body: %.200s", request.url.path, body.model_dump_json())
+    log(
+        log.INFO,
+        "MCP: POST %s | body: %.200s",
+        request.url.path,
+        body.model_dump_json(),
+    )
 
     method = body.method
     params = body.params or ToolCallParams()
@@ -151,11 +158,13 @@ async def mcp(
         return ok(MCPResult(content=[ContentItem(type="text", text=content)]))
 
     if method == "initialize":
-        return ok(MCPResult(
-            protocolVersion="2024-11-05",
-            capabilities={"tools": {}},
-            serverInfo={"name": "insight-mcp", "version": "1.0.0"},
-        ))
+        return ok(
+            MCPResult(
+                protocolVersion="2024-11-05",
+                capabilities={"tools": {}},
+                serverInfo={"name": "insight-mcp", "version": "1.0.0"},
+            )
+        )
 
     if method and method.startswith("notifications/"):
         return Response(status_code=202)

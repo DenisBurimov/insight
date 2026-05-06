@@ -65,7 +65,6 @@ class PaymentService:
         # Transaction boundary: the commit lives in the service, not the route.
         # If anything above raised, the session is rolled back by get_db().
         await self._session.commit()
-        await self._session.refresh(payment)
         return payment
 
     async def delete_payment(self, payment_id: int) -> None:

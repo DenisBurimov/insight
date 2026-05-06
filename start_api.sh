@@ -5,4 +5,4 @@ until curl -sf http://app:8080/no-content > /dev/null; do
   sleep 3
 done
 echo "Flask app is ready, starting API server"
-exec uvicorn api.main:app --host 0.0.0.0 --port 8001
+exec gunicorn api.main:app --worker-class uvicorn.workers.UvicornWorker --workers 4 --bind 0.0.0.0:8001
