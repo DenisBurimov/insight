@@ -16,27 +16,27 @@ app.include_router(payments_router)
 # This is the single place that decides what status code each error maps to.
 
 @app.exception_handler(PaymentNotFound)
-def handle_payment_not_found(request: Request, exc: PaymentNotFound) -> JSONResponse:
+async def handle_payment_not_found(request: Request, exc: PaymentNotFound) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": str(exc)})
 
 
 @app.exception_handler(DuplicatePaymentNumber)
-def handle_duplicate_payment(request: Request, exc: DuplicatePaymentNumber) -> JSONResponse:
+async def handle_duplicate_payment(request: Request, exc: DuplicatePaymentNumber) -> JSONResponse:
     return JSONResponse(status_code=409, content={"detail": str(exc)})
 
 
 @app.exception_handler(InvalidPaymentAmount)
-def handle_invalid_amount(request: Request, exc: InvalidPaymentAmount) -> JSONResponse:
+async def handle_invalid_amount(request: Request, exc: InvalidPaymentAmount) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 
 @app.get("/health")
-def health() -> dict:
+async def health() -> dict:
     return {"status": "ok"}
 
 
 @app.get("/routes")
-def list_routes():
+async def list_routes():
     return [
         {"path": route.path, "methods": sorted(route.methods), "name": route.name}
         for route in app.routes

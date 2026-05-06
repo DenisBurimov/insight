@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import models as m
 from api.domain.errors import DuplicatePaymentNumber, InvalidPaymentAmount, PaymentNotFound
@@ -17,31 +17,31 @@ class PaymentService:
     - raises domain errors that the web layer translates to HTTP responses
     """
 
-    def __init__(self, session: Session, repo: PaymentRepository) -> None:
+    def __init__(self, session: AsyncSession, repo: PaymentRepository) -> None:
         self._session = session
         self._repo = repo
 
     # ── Queries ────────────────────────────────────────────────────────────────
 
-    def list_payments(self, filters: PaymentFilters) -> list[m.Payment]:
-        return self._repo.list(
+    async def list_payments(self, filters: PaymentFilters) -> list[m.Payment]:
+        return await self._repo.list(
             payer_name=filters.payer_name,
             recipient_name=filters.recipient_name,
             limit=filters.limit,
         )
 
-    def get_payment(self, payment_id: int) -> m.Payment:
-        payment = self._repo.get_by_id(payment_id)
+    async def get_payment(self, payment_id: int) -> m.Payment:
+        payment = await self._repo.get_by_id(payment_id)
         if payment is None:
             raise PaymentNotFound(payment_id)
         return payment
 
     # ── Commands ───────────────────────────────────────────────────────────────
 
-    def create_payment(self, data: PaymentCreate) -> m.Payment:
+    async def create_payment(self, data: PaymentCreate) -> m.Payment:
         # Business rule: payment numbers must be unique
         if data.number:
-            existing = self._repo.get_by_number(data.number)
+            existing = await self._repo.get_by_number(data.number)
             if existing:
                 raise DuplicatePaymentNumber(data.number)
 
@@ -64,14 +64,14 @@ class PaymentService:
 
         # Transaction boundary: the commit lives in the service, not the route.
         # If anything above raised, the session is rolled back by get_db().
-        self._session.commit()
-        self._session.refresh(payment)
+        await self._session.commit()
+        await self._session.refresh(payment)
         return payment
 
-    def delete_payment(self, payment_id: int) -> None:
-        payment = self._repo.get_by_id(payment_id)
+    async def delete_payment(self, payment_id: int) -> None:
+        payment = await self._repo.get_by_id(payment_id)
         if payment is None:
             raise PaymentNotFound(payment_id)
 
-        self._repo.delete(payment)
-        self._session.commit()
+        await self._repo.delete(payment)
+        await self._session.commit()

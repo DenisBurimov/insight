@@ -3,6 +3,8 @@ flask-wtf
 gunicorn
 psycopg2-binary
 pg8000
+asyncpg
+aiosqlite
 sqlalchemy>=2.0.0
 flask-sqlalchemy
 flask-migrate

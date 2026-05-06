@@ -3,7 +3,7 @@ from typing import Any
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Header, Request, Response
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import models as m
 from api.database import get_db
@@ -77,7 +77,7 @@ TOOLS = [
 
 # ── Tool handlers ──────────────────────────────────────────────────────────────
 
-def _handle_get_payments(session: Session, args: dict) -> str:
+async def _handle_get_payments(session: AsyncSession, args: dict) -> str:
     stmt = sa.select(m.Payment)
     if args.get("payer_name"):
         stmt = stmt.where(m.Payment.payer_name.ilike(f"%{args['payer_name']}%"))
@@ -85,7 +85,7 @@ def _handle_get_payments(session: Session, args: dict) -> str:
         stmt = stmt.where(m.Payment.recipient_name.ilike(f"%{args['recipient_name']}%"))
     limit = min(int(args.get("limit", 100)), 500)
     stmt = stmt.order_by(m.Payment.created_at.desc()).limit(limit)
-    rows = session.scalars(stmt).all()
+    rows = (await session.scalars(stmt)).all()
 
     lines = ["id,filename,number,payment_date,summ,payer_name,payer_iban,recipient_name,recipient_iban,payment_purpose"]
     for r in rows:
@@ -98,8 +98,8 @@ def _handle_get_payments(session: Session, args: dict) -> str:
     return "\n".join(lines)
 
 
-def _handle_get_payment(session: Session, args: dict) -> str:
-    payment = session.scalar(sa.select(m.Payment).where(m.Payment.id == int(args["id"])))
+async def _handle_get_payment(session: AsyncSession, args: dict) -> str:
+    payment = await session.scalar(sa.select(m.Payment).where(m.Payment.id == int(args["id"])))
     if not payment:
         return "Payment not found"
     fields = [
@@ -126,16 +126,16 @@ def _handle_get_payment(session: Session, args: dict) -> str:
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 @router.get("")
-def mcp_ping() -> dict:
+async def mcp_ping() -> dict:
     log(log.INFO, "MCP: GET /mcp — health ping")
     return {"status": "ok"}
 
 
 @router.post("", response_model=MCPResponse)
-def mcp(
+async def mcp(
     request: Request,
     body: MCPRequest,
-    session: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
     authorization: str = Header(default="", alias="Authorization"),
 ):
     log(log.INFO, "MCP: POST %s | body: %.200s", request.url.path, body.model_dump_json())
@@ -171,9 +171,9 @@ def mcp(
         args = params.arguments
         log(log.INFO, "MCP: tools/call name=%s args=%s", name, args)
         if name == "get_payments":
-            return text(_handle_get_payments(session, args))
+            return text(await _handle_get_payments(session, args))
         if name == "get_payment":
-            return text(_handle_get_payment(session, args))
+            return text(await _handle_get_payment(session, args))
         log(log.WARNING, "MCP: unknown tool %r", name)
         return ok(MCPResult(error={"code": -32601, "message": f"Unknown tool: {name}"}))
 

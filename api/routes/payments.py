@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_db
 from api.repositories.payment_repo import PaymentRepository
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/payments", tags=["payments"])
 
 # ── Dependency factory ─────────────────────────────────────────────────────────
 
-def get_payment_service(session: Session = Depends(get_db)) -> PaymentService:
+def get_payment_service(session: AsyncSession = Depends(get_db)) -> PaymentService:
     """Wire session → repository → service.
 
     Routes declare this as a dependency; they never instantiate services
@@ -31,32 +31,32 @@ def get_payment_service(session: Session = Depends(get_db)) -> PaymentService:
 # No business logic, no SQL, no domain decisions.
 
 @router.get("", response_model=list[PaymentResponse])
-def list_payments(
+async def list_payments(
     filters: Annotated[PaymentFilters, Query()],
     service: PaymentService = Depends(get_payment_service),
 ) -> list[PaymentResponse]:
-    return service.list_payments(filters)  # type: ignore[return-value]
+    return await service.list_payments(filters)  # type: ignore[return-value]
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)
-def get_payment(
+async def get_payment(
     payment_id: int,
     service: PaymentService = Depends(get_payment_service),
 ) -> PaymentResponse:
-    return service.get_payment(payment_id)  # type: ignore[return-value]
+    return await service.get_payment(payment_id)  # type: ignore[return-value]
 
 
 @router.post("", response_model=PaymentResponse, status_code=201)
-def create_payment(
+async def create_payment(
     body: PaymentCreate,
     service: PaymentService = Depends(get_payment_service),
 ) -> PaymentResponse:
-    return service.create_payment(body)  # type: ignore[return-value]
+    return await service.create_payment(body)  # type: ignore[return-value]
 
 
 @router.delete("/{payment_id}", status_code=204)
-def delete_payment(
+async def delete_payment(
     payment_id: int,
     service: PaymentService = Depends(get_payment_service),
 ) -> None:
-    service.delete_payment(payment_id)
+    await service.delete_payment(payment_id)
