@@ -1,4 +1,5 @@
 import asyncio
+import os
 from collections.abc import AsyncGenerator
 from urllib.parse import urlparse
 
@@ -27,8 +28,24 @@ def _get_session_local() -> async_sessionmaker[AsyncSession]:
         CFG = config()
         url = _make_async_url(CFG.SQLALCHEMY_DATABASE_URI)
         instance = getattr(CFG, "CLOUD_SQL_INSTANCE", "")
+        pgbouncer_host = os.environ.get("PGBOUNCER_HOST", "")
 
-        if instance and url.startswith("postgresql"):
+        if pgbouncer_host and url.startswith("postgresql"):
+            # Route through PgBouncer; skip the Cloud SQL connector.
+            # PgBouncer + Cloud SQL Proxy handle auth and real connection pooling.
+            parsed = urlparse(CFG.SQLALCHEMY_DATABASE_URI)
+            bouncer_url = parsed._replace(
+                scheme="postgresql+asyncpg",
+                netloc=f"{parsed.username}:{parsed.password}@{pgbouncer_host}:5432",
+            ).geturl()
+            engine = create_async_engine(
+                bouncer_url,
+                pool_size=5,
+                max_overflow=10,
+                pool_timeout=30,
+                pool_pre_ping=True,
+            )
+        elif instance and url.startswith("postgresql"):
             parsed = urlparse(CFG.SQLALCHEMY_DATABASE_URI)
             user, password, db = parsed.username, parsed.password, parsed.path.lstrip("/")
 
@@ -46,8 +63,8 @@ def _get_session_local() -> async_sessionmaker[AsyncSession]:
             engine = create_async_engine(
                 "postgresql+asyncpg://",
                 async_creator=_getconn,
-                pool_size=20,
-                max_overflow=40,
+                pool_size=5,
+                max_overflow=10,
                 pool_timeout=30,
                 pool_pre_ping=True,
                 pool_recycle=1800,
@@ -55,8 +72,8 @@ def _get_session_local() -> async_sessionmaker[AsyncSession]:
         elif url.startswith("postgresql"):
             engine = create_async_engine(
                 url,
-                pool_size=20,
-                max_overflow=40,
+                pool_size=5,
+                max_overflow=10,
                 pool_timeout=30,
                 pool_pre_ping=True,
                 pool_recycle=1800,

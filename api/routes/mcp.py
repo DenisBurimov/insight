@@ -80,7 +80,7 @@ TOOLS = [
 
 
 async def _handle_get_payments(session: AsyncSession, args: dict) -> str:
-    limit = min(int(args.get("limit", 100)), 500)
+    limit = min(int(args.get("limit", 100)), 200)
     repo = PaymentRepository(session)
     rows = await repo.list(
         payer_name=args.get("payer_name"),

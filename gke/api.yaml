@@ -18,7 +18,7 @@ spec:
       containers:
         - name: api
           image: REGION-docker.pkg.dev/PROJECT_ID/ARTIFACT_REPO/insight:latest
-          command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]
+          command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]
           ports:
             - containerPort: 8001
           envFrom:
@@ -38,13 +38,16 @@ spec:
               port: 8001
             initialDelaySeconds: 20
             periodSeconds: 30
+          env:
+            - name: PGBOUNCER_HOST
+              value: pgbouncer.insight.svc.cluster.local
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
               memory: "256Mi"
               cpu: "500m"
+            limits:
+              memory: "512Mi"
+              cpu: "2000m"
 ---
 apiVersion: v1
 kind: Service

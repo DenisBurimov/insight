@@ -29,6 +29,49 @@ graph LR
 ```
 
 
+## Handling high load on the MCP API
+
+The FastAPI server is the public-facing entry point for MCP clients (Claude.ai and other AI agents). Under concurrent load the bottleneck is not the Python code — it's PostgreSQL connection limits.
+
+### The problem
+
+PostgreSQL spawns a dedicated OS process per connection (~5–10 MB RAM each) and Cloud SQL enforces a hard `max_connections` ceiling based on the instance tier. With naive SQLAlchemy defaults each app worker holds its own pool of open connections. At scale — multiple pods, multiple workers per pod — the total exceeds what Cloud SQL can serve, and requests start timing out with `remaining connection slots are reserved` errors.
+
+### The solution: PgBouncer in transaction mode
+
+PgBouncer sits between the app and Cloud SQL. It accepts up to 500 client connections (or 2,000 on GKE) but only keeps **50 real connections** open to the database. In transaction mode it checks out a real connection for the duration of a single transaction, then immediately returns it — so a real connection serves dozens of app workers in sequence rather than sitting idle between requests.
+
+```
+App workers               PgBouncer          Cloud SQL
+──────────────────────    ─────────────────  ──────────────
+4 gunicorn workers   ─╮                 ╭─  real conn 1
+× 15 pool slots each  ├─ up to 500 app ─┤   real conn 2
+= 60 "connections"   ─╯   connections   ╰─  ...
+                                            real conn 50
+```
+
+### Capacity math (GKE)
+
+| Layer | Value |
+|---|---|
+| Workers per pod | 4 (gunicorn + UvicornWorker) |
+| App-side pool per worker | 5 + 10 overflow = 15 |
+| Max pods (HPA) | 20 |
+| App-side connections total | 4 × 15 × 20 = **1,200** |
+| Real DB connections (PgBouncer) | **50** |
+
+### Deployment-specific architecture
+
+**GKE** — PgBouncer runs as a dedicated Deployment (2 replicas for availability). Each PgBouncer pod runs a Cloud SQL Auth Proxy sidecar that handles IAM authentication to Cloud SQL. The API pods connect to PgBouncer via a ClusterIP Service and skip the Cloud SQL Python Connector entirely.
+
+**Docker Compose (GCE)** — same split, different topology: Cloud SQL Auth Proxy and PgBouncer run as separate Compose services. On a GCE VM the proxy picks up credentials from the instance metadata server automatically — no key file needed.
+
+### Why not just increase the pool size?
+
+More pool slots per worker would exhaust Cloud SQL connections faster and provide no throughput benefit — the DB can only run so many queries in parallel regardless. Smaller per-worker pools (`pool_size=5`) combined with PgBouncer multiplexing is strictly better: fewer idle connections held, same or higher throughput, no connection limit errors.
+
+---
+
 ## To run the project locally set up venv and activate it
 ```
 python3.13 -m venv .venv
