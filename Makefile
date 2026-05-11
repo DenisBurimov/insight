@@ -27,3 +27,15 @@ reset-db:
 	@echo "Migrating..."
 	flask db upgrade
 
+.PHONY: profile-web
+profile-web:
+	bash scripts/profile_web.sh $(DURATION)
+
+.PHONY: profile-api
+profile-api:
+	bash scripts/profile_api.sh $(DURATION)
+
+.PHONY: profile-celery
+profile-celery:
+	bash scripts/profile_celery.sh $(DURATION)
+

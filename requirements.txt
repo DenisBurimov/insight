@@ -5,6 +5,7 @@ psycopg2-binary
 pg8000
 asyncpg
 aiosqlite
+greenlet
 sqlalchemy>=2.0.0
 flask-sqlalchemy
 flask-migrate
@@ -27,3 +28,4 @@ google-api-python-client
 ply
 mypy
 ruff
+py-spy

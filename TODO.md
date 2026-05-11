@@ -75,23 +75,23 @@
 ## Phase 4 — py-spy (Profiling)
 
 ### Scripts
-- [ ] Create `scripts/profile_web.sh`
+- [x] Create `scripts/profile_web.sh`
   - Finds the Gunicorn master PID inside the running `app` container
   - Runs `py-spy record -o flamegraph_web.svg --pid <PID> --duration 30`
-- [ ] Create `scripts/profile_api.sh`
+- [x] Create `scripts/profile_api.sh`
   - Same but targets the Uvicorn process in the `api` container
-- [ ] Create `scripts/profile_celery.sh`
+- [x] Create `scripts/profile_celery.sh`
   - Profiles a running Celery worker for 30s
-- [ ] Add `py-spy` to `requirements.txt` (or keep as dev-only in `pyproject.toml`)
+- [x] Add `py-spy` to `requirements.txt`
 
 ### Makefile targets
-- [ ] `make profile-web` — runs `scripts/profile_web.sh`, opens `flamegraph_web.svg`
-- [ ] `make profile-api` — runs `scripts/profile_api.sh`, opens `flamegraph_api.svg`
-- [ ] `make profile-celery` — runs `scripts/profile_celery.sh`
+- [x] `make profile-web` — runs `scripts/profile_web.sh`, opens `flamegraph_web.svg`
+- [x] `make profile-api` — runs `scripts/profile_api.sh`, opens `flamegraph_api.svg`
+- [x] `make profile-celery` — runs `scripts/profile_celery.sh`
 
 ### Docker requirements for py-spy
-- [ ] Add `--cap-add SYS_PTRACE` to `app` and `api` services in `docker-compose.yaml` (needed for py-spy to attach)
-- [ ] Document GKE ephemeral container approach in `README.md`:
+- [x] Add `cap_add: SYS_PTRACE` to `app`, `api`, and `celery-worker` in `docker-compose.yaml`
+- [x] Document GKE ephemeral container approach in `README.md`:
   ```
   kubectl debug -it <pod> --image=jonringer/py-spy --target=<container> -- py-spy record -o /tmp/flamegraph.svg --pid 1 --duration 30
   ```

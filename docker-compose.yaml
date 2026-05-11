@@ -43,6 +43,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     command: sh ./start_web.sh
+    cap_add:
+      - SYS_PTRACE
     env_file:
       - ./.env
     environment:
@@ -70,6 +72,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     command: sh ./start_api.sh
+    cap_add:
+      - SYS_PTRACE
     env_file:
       - ./.env
     environment:
@@ -95,6 +99,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     command: celery -A app.celery worker --loglevel=info
+    cap_add:
+      - SYS_PTRACE
     env_file:
       - ./.env
     environment:

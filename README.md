@@ -256,3 +256,71 @@ kubectl apply -f gke/hpa.yaml
   kubectl apply -f gke/migrate-job.yaml
   kubectl wait --for=condition=complete job/migrate -n insight --timeout=120s
   ```
+
+---
+
+## Profiling with py-spy
+
+py-spy attaches to a running Python process and records a flamegraph SVG — no code changes needed. `py-spy` is installed in the container image via `requirements.txt`.
+
+### Locally (Flask / FastAPI running directly)
+
+On macOS, py-spy requires `sudo` to attach to another process:
+
+```bash
+# Flask
+sudo py-spy record -o flamegraph_web.svg --pid $(pgrep -f 'flask run') --duration 30
+
+# FastAPI
+sudo py-spy record -o flamegraph_api.svg --pid $(pgrep -f 'uvicorn') --duration 30
+```
+
+Open the result: `open flamegraph_web.svg`
+
+### Docker Compose
+
+`app`, `api`, and `celery-worker` have `cap_add: SYS_PTRACE` so py-spy can attach without sudo. Use the Makefile targets:
+
+```bash
+# 30-second profile (default)
+make profile-web
+make profile-api
+make profile-celery
+
+# Custom duration
+make profile-web DURATION=60
+```
+
+Each script finds the Gunicorn / Celery master PID, records all worker subprocesses with `--subprocesses`, copies the SVG out of the container, and opens it on macOS automatically.
+
+To target a specific compose file:
+
+```bash
+COMPOSE_FILE=docker-compose.local.yaml make profile-web
+```
+
+### GKE
+
+Since py-spy is already installed in the image, exec directly into the running pod. The pod's container spec must have `SYS_PTRACE` in its `securityContext.capabilities.add` (add to the relevant `gke/*.yaml` before deploying).
+
+```bash
+# Flask / Gunicorn
+POD=$(kubectl get pod -n insight -l app=web -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -it "$POD" -n insight -- \
+  py-spy record -o /tmp/flamegraph_web.svg --pid 1 --duration 30 --subprocesses
+kubectl cp "insight/${POD}:/tmp/flamegraph_web.svg" ./flamegraph_web.svg
+
+# FastAPI / Gunicorn+Uvicorn
+POD=$(kubectl get pod -n insight -l app=api -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -it "$POD" -n insight -- \
+  py-spy record -o /tmp/flamegraph_api.svg --pid 1 --duration 30 --subprocesses
+kubectl cp "insight/${POD}:/tmp/flamegraph_api.svg" ./flamegraph_api.svg
+
+# Celery worker
+POD=$(kubectl get pod -n insight -l app=celery-worker -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -it "$POD" -n insight -- \
+  py-spy record -o /tmp/flamegraph_celery.svg --pid 1 --duration 30 --subprocesses
+kubectl cp "insight/${POD}:/tmp/flamegraph_celery.svg" ./flamegraph_celery.svg
+```
+
+Open the result: `open flamegraph_web.svg`
