@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_db
@@ -30,7 +31,7 @@ def get_payment_service(session: AsyncSession = Depends(get_db)) -> PaymentServi
 #   3. Return the response
 # No business logic, no SQL, no domain decisions.
 
-@router.get("", response_model=list[PaymentResponse])
+@router.get("", response_model=list[PaymentResponse], dependencies=[Depends(RateLimiter(times=60, seconds=60))])
 async def list_payments(
     filters: Annotated[PaymentFilters, Query()],
     service: PaymentService = Depends(get_payment_service),
@@ -38,7 +39,7 @@ async def list_payments(
     return await service.list_payments(filters)  # type: ignore[return-value]
 
 
-@router.get("/{payment_id}", response_model=PaymentResponse)
+@router.get("/{payment_id}", response_model=PaymentResponse, dependencies=[Depends(RateLimiter(times=60, seconds=60))])
 async def get_payment(
     payment_id: int,
     service: PaymentService = Depends(get_payment_service),
@@ -46,7 +47,7 @@ async def get_payment(
     return await service.get_payment(payment_id)  # type: ignore[return-value]
 
 
-@router.post("", response_model=PaymentResponse, status_code=201)
+@router.post("", response_model=PaymentResponse, status_code=201, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def create_payment(
     body: PaymentCreate,
     service: PaymentService = Depends(get_payment_service),
@@ -54,7 +55,7 @@ async def create_payment(
     return await service.create_payment(body)  # type: ignore[return-value]
 
 
-@router.delete("/{payment_id}", status_code=204)
+@router.delete("/{payment_id}", status_code=204, dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def delete_payment(
     payment_id: int,
     service: PaymentService = Depends(get_payment_service),

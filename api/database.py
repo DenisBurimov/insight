@@ -3,11 +3,13 @@ import os
 from collections.abc import AsyncGenerator
 from urllib.parse import urlparse
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from config import config
 
 _async_session_local = None
+_engine: AsyncEngine | None = None
 _cloud_sql_connector = None
 _connector_lock = asyncio.Lock()
 
@@ -23,7 +25,7 @@ def _make_async_url(url: str) -> str:
 
 
 def _get_session_local() -> async_sessionmaker[AsyncSession]:
-    global _async_session_local
+    global _async_session_local, _engine
     if _async_session_local is None:
         CFG = config()
         url = _make_async_url(CFG.SQLALCHEMY_DATABASE_URI)
@@ -44,17 +46,25 @@ def _get_session_local() -> async_sessionmaker[AsyncSession]:
                 max_overflow=10,
                 pool_timeout=30,
                 pool_pre_ping=True,
+                pool_recycle=1800,
             )
         elif instance and url.startswith("postgresql"):
             parsed = urlparse(CFG.SQLALCHEMY_DATABASE_URI)
-            user, password, db = parsed.username, parsed.password, parsed.path.lstrip("/")
+            user, password, db = (
+                parsed.username,
+                parsed.password,
+                parsed.path.lstrip("/"),
+            )
 
             async def _getconn():
                 global _cloud_sql_connector
                 if _cloud_sql_connector is None:
                     async with _connector_lock:
                         if _cloud_sql_connector is None:
-                            from google.cloud.sql.connector import create_async_connector
+                            from google.cloud.sql.connector import (
+                                create_async_connector,
+                            )
+
                             _cloud_sql_connector = await create_async_connector()
                 return await _cloud_sql_connector.connect_async(
                     instance, "asyncpg", user=user, password=password, db=db
@@ -81,8 +91,19 @@ def _get_session_local() -> async_sessionmaker[AsyncSession]:
         else:
             engine = create_async_engine(url)
 
+        _engine = engine
         _async_session_local = async_sessionmaker(engine, expire_on_commit=False)
     return _async_session_local
+
+
+async def warm_pool() -> None:
+    _get_session_local()
+
+    async def _ping():
+        async with _engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+
+    await asyncio.gather(*[_ping() for _ in range(_engine.pool.size())])
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

@@ -1,7 +1,13 @@
+import os
+from contextlib import asynccontextmanager
+
+import redis.asyncio as aioredis
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from fastapi_limiter import FastAPILimiter
 
+from api.database import warm_pool
 from api.domain.errors import (
     DuplicatePaymentNumber,
     InvalidPaymentAmount,
@@ -9,7 +15,19 @@ from api.domain.errors import (
 )
 from api.routes import mcp_router, payments_router
 
-app = FastAPI()
+_REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/2")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    redis = aioredis.from_url(_REDIS_URL, encoding="utf-8", decode_responses=True)
+    await FastAPILimiter.init(redis)
+    await warm_pool()
+    yield
+    await FastAPILimiter.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(mcp_router, prefix="/mcp")
 app.include_router(payments_router)
